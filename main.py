@@ -6,14 +6,12 @@ from PIL import Image
 
 dotenv.load_dotenv()
 
-'''
 mydb = mysql.connector.connect(
   host=os.getenv('DB_HOST'),
   port=os.getenv('DB_PORT'),
   user=os.getenv('DB_USER'),
   password=os.getenv('DB_PASSWORD')
 )
-'''
 
 class App(customtkinter.CTk):
     def __init__(self, *args, **kwargs):
@@ -39,13 +37,9 @@ class App(customtkinter.CTk):
         ## Button to Edit List
         mondImage = customtkinter.CTkImage(dark_image=Image.open("assets/moon-light.png"), light_image=Image.open("assets/moon-dark.png"), size=(30, 30))
         self.createButton = customtkinter.CTkButton(self, text="Create New", height=30, command=self.newEntry, fg_color="green")
-        self.createButton.grid(row=0, column=3, padx=20, pady=15)
+        self.createButton.grid(row=0, column=4, padx=20, pady=15, sticky="w")
         self.darkMode = customtkinter.CTkButton(self, text="DarkMode", height=30, image=mondImage, command=self.toggleDarkMode)
-        self.darkMode.grid(row=0, column=4, padx=20, pady=15)
-
-        ## Entry Box
-        #self.entrybox = customtkinter.CTkEntry(self, placeholder_text="Insert you Accountname", height=30)
-        #self.entrybox.grid(row=0, column=0, padx=50, columnspan=3, sticky="we")
+        self.darkMode.grid(row=0, column=4, padx=20, pady=15, sticky="e")
 
     def toggleDarkMode(self):
         if self.darkMode:
@@ -55,11 +49,14 @@ class App(customtkinter.CTk):
             customtkinter.set_appearance_mode("dark")
             self.darkMode = True
 
+    def getDarkMode(self):
+        return self.darkMode
+
     def newEntry(self):
         if self.newEntryDialog is None or not self.newEntryDialog.winfo_exists():
-            self.newEntryDialog = EntryDialog(self)  # create window if its None or destroyed
+            self.newEntryDialog = EntryDialog(self)
         else:
-            self.newEntryDialog.focus()  # if window exists focus it
+            self.newEntryDialog.focus()
 
     def newEntryold(self):
         if self.entrybox.get() == "":
@@ -82,12 +79,32 @@ class EntryDialog(customtkinter.CTkToplevel):
         self.grid_rowconfigure((0, 1, 2, 3), weight=1)
 
         ## CONFIRM BUTTON
-        self.button = customtkinter.CTkButton(self, text="Confirm", height=30, fg_color="green")
-        self.button.grid(row=3, column=2)
-
+        self.button = customtkinter.CTkButton(self, text="Confirm", height=30, fg_color="green", command=self.confirmPressed)
+        self.button.grid(row=3, column=1, padx=30, sticky="e")
         ## CANCEL BUTTON
-        self.button = customtkinter.CTkButton(self, text="Cancel", height=30, fg_color="red")
-        self.button.grid(row=3, column=0)
+        self.button = customtkinter.CTkButton(self, text="Cancel", height=30, fg_color="red", command=self.cancelPressed)
+        self.button.grid(row=3, column=1, padx=30, sticky="w")
+
+        ## AccountName Field
+        self.accountNameField = customtkinter.CTkEntry(self, width=350, placeholder_text="Account Name")
+        self.accountNameField.grid(row = 0, column = 1)
+        ## Name Field
+        self.nameField = customtkinter.CTkEntry(self, width=350, placeholder_text="Name")
+        self.nameField.grid(row = 1, column = 1)
+        ## Password Field
+        self.passwordField = customtkinter.CTkEntry(self, width=350, placeholder_text="Password", show="*")
+        self.passwordField.grid(row = 2, column = 1)
+
+    def confirmPressed(self):
+        print("Confirm")
+        self.account = self.accountNameField.get()
+        self.name = self.nameField.get()
+        self.password = self.passwordField.get()
+        print(self.account, self.name, self.password)   ## Create SQL Entry and refresh list
+
+    def cancelPressed(self):
+        print("Cancel")
+
 
 ## Main Srollframe
 class ScrollFrame(customtkinter.CTkScrollableFrame):
@@ -125,9 +142,6 @@ class ScrollFrame(customtkinter.CTkScrollableFrame):
 
     def buttonCommand(self):
         print("Button clicked!")
-
-        #self.label = customtkinter.CTkLabel(self, text="No 1", width=50, height=25).grid(row=1, column=0)
-        #self.button = customtkinter.CTkButton(self, text="No 1", width=50, height=25).grid(row=1, column=1)
 
 app = App()
 app.mainloop()
