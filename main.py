@@ -45,22 +45,32 @@ class App(customtkinter.CTk):
 class ScrollFrame(customtkinter.CTkScrollableFrame):
     def __init__(self, master, **kwargs):
         super().__init__(master, **kwargs)
-        self.grid_columnconfigure((0, 1), weight=1)
+        self.grid_columnconfigure((0), weight=1)
 
+        self.framelist = []
         self.labellist = []
         self.buttonlist = []
 
     def add_item(self, item):
-        label = customtkinter.CTkLabel(self, text=item, width=800, height=50).grid(row=len(self.labellist), column=0, padx=10, pady=10)
-        button = customtkinter.CTkButton(self, text=item, width=280, height=50, command=self.buttonCommand, hover=True).grid(row=len(self.buttonlist), column=1, padx=10, pady=10)
+        frame = customtkinter.CTkFrame(self, width=200, height=200, fg_color="#424242")
+        frame.grid(sticky="nsew", column=0, padx=10, pady=10)
+        frame.grid_columnconfigure((0,1), weight=1)
+        label = customtkinter.CTkLabel(frame, text=item, width=800, height=50, )
+        label.grid(row=len(self.labellist), column=0, padx=10, pady=10)
+        button = customtkinter.CTkButton(frame, text="Action", width=280, height=50, command=self.buttonCommand, hover=True)
+        button.grid(row=len(self.buttonlist), column=1, padx=10, pady=10)
+        self.framelist.append(frame)
         self.labellist.append(label)
         self.buttonlist.append(button)
 
     def remove_item(self, item):
-        for label, button in zip(self.labellist, self.buttonlist):
+        for frame, label, button in zip(self.framelist, self.labellist, self.buttonlist):
+            print(label, button)
             if item == label.cget("text"):
+                frame.destroy()
                 label.destroy()
-                button.destroy
+                button.destroy()
+                self.framelist.remove(frame)
                 self.labellist.remove(label)
                 self.buttonlist.remove(button)
                 return
