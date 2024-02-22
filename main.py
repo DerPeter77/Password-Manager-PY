@@ -1,4 +1,16 @@
+import dotenv
+import os
 import customtkinter
+import mysql.connector
+
+dotenv.load_dotenv()
+
+mydb = mysql.connector.connect(
+  host=os.getenv('DB_HOST'),
+  port=os.getenv('DB_PORT'),
+  user=os.getenv('DB_USER'),
+  password=os.getenv('DB_PASSWORD')
+)
 
 
 class App(customtkinter.CTk):
