@@ -10,8 +10,28 @@ mydb = mysql.connector.connect(
   host=os.getenv('DB_HOST'),
   port=os.getenv('DB_PORT'),
   user=os.getenv('DB_USER'),
-  password=os.getenv('DB_PASSWORD')
+  password=os.getenv('DB_PASSWORD'),
+  database="passwordmanager"
 )
+
+'''
+## SELECT
+
+dbcursor = mydb.cursor()
+dbcursor.execute("SELECT * FROM passwords")
+result = dbcursor.fetchall()
+for x in result:
+    print(x)
+
+## INSERT INTO
+
+dbcursor = mydb.cursor()
+sql = "INSERT INTO passwords (accname, NAME, PASSWORD) VALUES (%s, %s, %s)"
+val = ("accname187", "tsetName187", "password187er")
+dbcursor.execute(sql, val)
+mydb.commit()
+'''
+
 
 class App(customtkinter.CTk):
     def __init__(self, *args, **kwargs):
@@ -34,10 +54,12 @@ class App(customtkinter.CTk):
         self.scrollframe = ScrollFrame(master=self)
         self.scrollframe.grid(row=1, column=0, sticky="nesw", columnspan=5, rowspan=2, padx=15, pady=15)
         
-        ## Button to Edit List
+        ## Button to Edit List and DarkMode
         mondImage = customtkinter.CTkImage(dark_image=Image.open("assets/moon-light.png"), light_image=Image.open("assets/moon-dark.png"), size=(30, 30))
         self.createButton = customtkinter.CTkButton(self, text="Create New", height=30, command=self.newEntry, fg_color="green")
         self.createButton.grid(row=0, column=4, padx=20, pady=15, sticky="w")
+        self.refreshButton = customtkinter.CTkButton(self, text="Refresh", height=30, command=self.refresh)
+        self.refreshButton.grid(row=0, column=3, padx=20, pady=15, sticky="w")
         self.darkMode = customtkinter.CTkButton(self, text="DarkMode", height=30, image=mondImage, command=self.toggleDarkMode)
         self.darkMode.grid(row=0, column=4, padx=20, pady=15, sticky="e")
 
@@ -51,6 +73,14 @@ class App(customtkinter.CTk):
 
     def getDarkMode(self):
         return self.darkMode
+    
+    def refresh(self):
+        self.scrollframe.removeAll()
+        dbcursor = mydb.cursor()
+        dbcursor.execute("SELECT * FROM passwords")
+        result = dbcursor.fetchall()
+        for x in result:
+            self.scrollframe.add_item(x[0])
 
     def newEntry(self):
         if self.newEntryDialog is None or not self.newEntryDialog.winfo_exists():
@@ -100,10 +130,46 @@ class EntryDialog(customtkinter.CTkToplevel):
         self.account = self.accountNameField.get()
         self.name = self.nameField.get()
         self.password = self.passwordField.get()
-        print(self.account, self.name, self.password)   ## Create SQL Entry and refresh list
+        dbcursor = mydb.cursor()
+        sql = "INSERT INTO passwords (accname, NAME, PASSWORD) VALUES (%s, %s, %s)"
+        val = (self.account, self.name, self.password)
+        dbcursor.execute(sql, val)
+        mydb.commit()
+        self.destroy()
 
     def cancelPressed(self):
         print("Cancel")
+        self.destroy()
+
+class OutPutDialog(customtkinter.CTkToplevel):
+    def __init__(self, item, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("400x300")
+        self.grid_columnconfigure((0, 1, 2), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3), weight=1)
+
+        dbcursor = mydb.cursor()
+        dbcursor.execute(f"SELECT * FROM passwords WHERE accname = \'{item}\' ")
+        result = dbcursor.fetchone()
+        print(f"Account: {result[0]}")
+
+        ## CONFIRM BUTTON
+        self.okbutton = customtkinter.CTkButton(self, text="OK", height=30, command=self.okPressed)
+        self.okbutton.grid(row=3, column=1, padx=30)
+
+        ## AccountName Field
+        self.accountNameField = customtkinter.CTkEntry(self, width=350, placeholder_text= f"Account: {result[0]}")
+        self.accountNameField.grid(row = 0, column = 1)
+        ## Name Field
+        self.nameField = customtkinter.CTkEntry(self, width=350, placeholder_text= f"Name: {result[1]}")
+        self.nameField.grid(row = 1, column = 1)
+        ## Password Field
+        self.passwordField = customtkinter.CTkEntry(self, width=350, placeholder_text= f"Password: {result[2]}")
+        self.passwordField.grid(row = 2, column = 1)
+
+    def okPressed(self):
+        print("Cancel")
+        self.destroy()
 
 
 ## Main Srollframe
@@ -122,7 +188,7 @@ class ScrollFrame(customtkinter.CTkScrollableFrame):
         frame.grid_columnconfigure((0,1), weight=1)
         label = customtkinter.CTkLabel(frame, text=item, width=800, height=50, )
         label.grid(row=len(self.labellist), column=0, padx=10, pady=10)
-        button = customtkinter.CTkButton(frame, text="Action", width=280, height=50, command=self.buttonCommand, hover=True)
+        button = customtkinter.CTkButton(frame, text="Action", width=280, height=50, command = lambda: self.buttonCommand(item), hover=True)
         button.grid(row=len(self.buttonlist), column=1, padx=10, pady=10)
         self.framelist.append(frame)
         self.labellist.append(label)
@@ -140,8 +206,19 @@ class ScrollFrame(customtkinter.CTkScrollableFrame):
                 self.buttonlist.remove(button)
                 return
 
-    def buttonCommand(self):
-        print("Button clicked!")
+    def removeAll(self):
+        for frame in self.framelist:
+            frame.destroy()
+        for label in self.labellist:
+            label.destroy()
+        for button in self.buttonlist:
+            button.destroy()
+        self.framelist = []
+        self.labellist = []
+        self.buttonlist = []
+
+    def buttonCommand(self, item):
+        OutPutDialog(item)
 
 app = App()
 app.mainloop()
