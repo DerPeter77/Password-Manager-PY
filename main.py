@@ -39,8 +39,10 @@ class App(customtkinter.CTk):
         
         customtkinter.set_default_color_theme("dark-blue")
         customtkinter.set_appearance_mode("dark")
+        #self.wm_iconbitmap()
         self.title("Password Manager")
         self.geometry("1280x720")
+        self.iconbitmap('assets/pwmanagericon.ico')
 
         self.darkmode = True
         self.newEntryDialog = None
@@ -105,15 +107,17 @@ class EntryDialog(customtkinter.CTkToplevel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.geometry("400x300")
+        self.title("Gib deine Daten ein")
+        self.iconbitmap('assets/pwmanagericon.ico')
         self.grid_columnconfigure((0, 1, 2), weight=1)
-        self.grid_rowconfigure((0, 1, 2, 3), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3, 4), weight=1)
 
         ## CONFIRM BUTTON
         self.button = customtkinter.CTkButton(self, text="Confirm", height=30, fg_color="green", command=self.confirmPressed)
-        self.button.grid(row=3, column=1, padx=30, sticky="e")
+        self.button.grid(row=4, column=1, padx=30, sticky="e")
         ## CANCEL BUTTON
         self.button = customtkinter.CTkButton(self, text="Cancel", height=30, fg_color="red", command=self.cancelPressed)
-        self.button.grid(row=3, column=1, padx=30, sticky="w")
+        self.button.grid(row=4, column=1, padx=30, sticky="w")
 
         ## AccountName Field
         self.accountNameField = customtkinter.CTkEntry(self, width=350, placeholder_text="Account Name")
@@ -124,27 +128,60 @@ class EntryDialog(customtkinter.CTkToplevel):
         ## Password Field
         self.passwordField = customtkinter.CTkEntry(self, width=350, placeholder_text="Password", show="*")
         self.passwordField.grid(row = 2, column = 1)
+        ## Password Confirm Field
+        self.passwordConfirmField = customtkinter.CTkEntry(self, width=350, placeholder_text="Confirm Password", show="*")
+        self.passwordConfirmField.grid(row = 3, column = 1)
+
+        self.unequal = None
 
     def confirmPressed(self):
         print("Confirm")
         self.account = self.accountNameField.get()
         self.name = self.nameField.get()
         self.password = self.passwordField.get()
-        dbcursor = mydb.cursor()
-        sql = "INSERT INTO passwords (accname, NAME, PASSWORD) VALUES (%s, %s, %s)"
-        val = (self.account, self.name, self.password)
-        dbcursor.execute(sql, val)
-        mydb.commit()
-        self.destroy()
+        self.passwordConfirm = self.passwordConfirmField.get()
+        if self.password == self.passwordConfirm:
+            dbcursor = mydb.cursor()
+            sql = "INSERT INTO passwords (accname, NAME, PASSWORD) VALUES (%s, %s, %s)"
+            val = (self.account, self.name, self.password)
+            dbcursor.execute(sql, val)
+            mydb.commit()
+            self.destroy()
+        else:
+            if self.unequal is None or not self.unequal.winfo_exists():
+                self.unequal = UnequalWindow()
+            else:
+                self.unequal.focus()
+            #print("Nicht gleich")
 
     def cancelPressed(self):
-        print("Cancel")
+        #print("Cancel")
+        self.destroy()
+
+class UnequalWindow(customtkinter.CTkToplevel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.geometry("250x200")
+        self.title("ERROR")
+        self.iconbitmap('assets/pwmanagericon.ico')
+        self.grid_columnconfigure(0, weight=1)
+        self.grid_rowconfigure((0, 1), weight=1)
+
+        self.label = customtkinter.CTkLabel(self, text="Passwörter müssen übereinstimmen")
+        self.label.grid(row = 0, column = 0)
+
+        self.button = customtkinter.CTkButton(self, text="OK", command=self.okPressed)
+        self.button.grid(row = 1, column = 0)
+
+    def okPressed(self):
         self.destroy()
 
 class OutPutDialog(customtkinter.CTkToplevel):
     def __init__(self, item, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.geometry("400x300")
+        self.title("Deine Daten")
+        self.iconbitmap('assets/pwmanagericon.ico')
         self.grid_columnconfigure((0, 1, 2), weight=1)
         self.grid_rowconfigure((0, 1, 2, 3), weight=1)
 
@@ -182,6 +219,8 @@ class ScrollFrame(customtkinter.CTkScrollableFrame):
         self.labellist = []
         self.buttonlist = []
 
+        self.outputdialog = None
+
     def add_item(self, item):
         frame = customtkinter.CTkFrame(self, width=200, height=200, fg_color="#424242")
         frame.grid(sticky="nsew", column=0, padx=10, pady=10)
@@ -218,7 +257,10 @@ class ScrollFrame(customtkinter.CTkScrollableFrame):
         self.buttonlist = []
 
     def buttonCommand(self, item):
-        OutPutDialog(item)
+        if self.outputdialog is None or not self.outputdialog.winfo_exists():
+            self.outputdialog = OutPutDialog(item)
+        else:
+            self.outputdialog.focus()
 
 app = App()
 app.mainloop()
