@@ -40,7 +40,7 @@ class App(customtkinter.CTk):
         customtkinter.set_default_color_theme("dark-blue")
         customtkinter.set_appearance_mode("dark")
         #self.wm_iconbitmap()
-        self.title("Password Manager")
+        self.title("Password Manager with DB")
         self.geometry("1280x720")
         self.iconbitmap('assets/pwmanagericon.ico')
 
